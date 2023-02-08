@@ -1,6 +1,10 @@
 package com.newdim.SpringDemo.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.Data;
 
 import java.io.Serializable;
 
@@ -8,6 +12,10 @@ import java.io.Serializable;
 @Entity
 @Table(name = "file_data")
 @IdClass(FileData.FilePrimaryKey.class)
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+@Builder
 public class FileData {
 
     static class FilePrimaryKey implements Serializable {
@@ -27,36 +35,4 @@ public class FileData {
     private String filePath;
     private String sourcePath;
 
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
-    public String getSourcePath() {
-        return sourcePath;
-    }
-
-    public void setSourcePath(String sourcePath) {
-        this.sourcePath = sourcePath;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Integer getId() {
-        return id;
-    }
 }

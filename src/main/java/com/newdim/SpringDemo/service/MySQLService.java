@@ -2,17 +2,9 @@ package com.newdim.SpringDemo.service;
 
 import com.newdim.SpringDemo.entity.FileData;
 import com.newdim.SpringDemo.respository.FileDataRepository;
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.util.URIUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.Optional;
 
 @Service
@@ -21,23 +13,28 @@ public class MySQLService {
     @Autowired
     private FileDataRepository fileDataRepository;
 
-    public String addFile(FileData fileData) {
-        fileDataRepository.save(fileData);
-        System.out.println(fileData.getName());
-        System.out.println(fileData.getFilePath());
-        System.out.println(fileData.getSourcePath());
-        return "Sava successfully";
+    public String addFile(final FileData fileData) {
+
+        try{
+            fileDataRepository.save(fileData);
+            return fileData.getName() + ": file uploaded successfully : ";
+        }catch (DataIntegrityViolationException e) {
+            System.out.println("There are duplicate entries for fileName " + fileData.getName());
+            return fileData.getName() + ": There is already an entry in the host server, use the latest download to cover the old one";
+        }catch (Exception ignored) {
+            System.out.println("Unknown ERROR");
+            return fileData.getName() + ": Unknown ERROR";
+        }
     }
-    public String getFilePathByName(String fileName) {
+
+    public String getFilePathByName(final String fileName) {
         try {
             Optional<FileData> fileData = fileDataRepository.findByName(fileName);
             return fileData.get().getFilePath();
         } catch (Exception e) {
-            // do nothing or add action code
+            System.out.println("we can not find the data");
             return null;
         }
     }
-
-
 
 }

@@ -20,43 +20,36 @@ import java.nio.charset.StandardCharsets;
 
 @RestController
 public class DownloadController {
+
+    private static final String FILE_DIR = "D://IdeaProjects//SpringDemo//files//";
+
     @Autowired
     private MySQLService mySQLService;
-    private static final String FILE_DIR = "D://IdeaProjects//SpringDemo//files//";
 
     // The remote host -> SpringServer -> Save as file stored in my server
     @RequestMapping("/downloadToServer")
-    public void downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) throws IOException {
+    public String downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) throws IOException {
         fetchResourcesFromNet(netAddress, fileName);
-        FileData fileData = new FileData();
-        fileData.setName(fileName);
-        fileData.setFilePath(FILE_DIR + fileName);
-        fileData.setSourcePath(netAddress);
-        String pathName = mySQLService.getFilePathByName(fileName);
-        if(pathName == null) mySQLService.addFile(fileData);
+        FileData fileData = FileData.builder().name(fileName).filePath(FILE_DIR + fileName).sourcePath(netAddress).build();
+        return mySQLService.addFile(fileData);
     }
 
     @RequestMapping(value="/downloadMutipleToServer")
-    public void downloadMutipleToServer(@RequestBody JsonNode payload) throws IOException {
-        if (payload.isArray()) {
-            for (JsonNode jsonNode : payload) {
-                String urlPath = jsonNode.get("url").asText();
-                String fileName = jsonNode.get("name").asText();
-                System.out.println(urlPath);
-                System.out.println(fileName);
-                fetchResourcesFromNet(urlPath, fileName);
-                FileData fileData = new FileData();
-                fileData.setName(fileName);
-                fileData.setFilePath(FILE_DIR + fileName);
-                fileData.setSourcePath(urlPath);
-                String pathName = mySQLService.getFilePathByName(fileName);
-                if(pathName == null) mySQLService.addFile(fileData);
-            }
+    public String downloadMutipleToServer(@RequestBody JsonNode payload) throws IOException {
+        StringBuilder message = new StringBuilder();
+        if (!payload.isArray()) {
+            return "The payload is not correct, please check it";
         }
-        System.out.println(payload);
+        for (JsonNode jsonNode : payload) {
+            String urlPath = jsonNode.get("url").asText();
+            String fileName = jsonNode.get("name").asText();
+            FileData fileData = FileData.builder().name(fileName).filePath(FILE_DIR + fileName).sourcePath(urlPath).build();
+            String log_info = mySQLService.addFile(fileData) + "\n";
+            fetchResourcesFromNet(urlPath, fileName);
+            message.append(log_info);
+        }
+        return message.toString();
     }
-
-
 
     // SpringServer -> Client -> Servlet Response
     @RequestMapping("/downloadToClient")
@@ -66,9 +59,14 @@ public class DownloadController {
         // If there is one, continue the below steps.
         // If there is no, then return to the front end and tell users.
         String pathName = mySQLService.getFilePathByName(fileName);
-        System.out.println("pathName: " + pathName);
         if (pathName == null) {
-            System.out.println("pathName: " + pathName);
+            System.out.println("Can not search file in the file system: " + fileName);
+            response.reset();
+            response.setStatus(404);
+            response.setHeader("Content-Type", "text/plain");
+            PrintWriter writer = response.getWriter();
+            writer.write("we can not find this file");
+            writer.close();
             return;
         }
 
@@ -94,6 +92,7 @@ public class DownloadController {
         outputStream.close();
 
     }
+
 
     private void fetchResourcesFromNet(String netAddress, String fileName) throws IOException {
 
