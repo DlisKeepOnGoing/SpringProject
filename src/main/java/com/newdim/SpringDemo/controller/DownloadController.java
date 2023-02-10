@@ -29,20 +29,6 @@ public class DownloadController {
     @Autowired
     private MySQLService mySQLService;
 
-    @RequestMapping("json")
-    public DownloadResponse testJson() {
-        DownloadResponse downloadResponse = DownloadResponse.builder().url("http://www.baidu.com").name("json").message("success").build();
-        return downloadResponse;
-    }
-
-    @RequestMapping("/jsonList")
-    public List<DownloadResponse> testJsonList() {
-        DownloadResponse downloadResponse = DownloadResponse.builder().url("http://www.baidu.com").name("json").message("success").build();
-        List<DownloadResponse> downloadResponseList = new ArrayList<>();
-        downloadResponseList.add(downloadResponse);
-        return downloadResponseList;
-    }
-
     // The remote host -> SpringServer -> Save as file stored in my server
     @RequestMapping("/downloadToServer")
     public DownloadResponse downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) {
