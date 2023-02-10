@@ -135,6 +135,7 @@ public class DownloadController {
             return true;
         } catch (IOException e) {
             System.out.println("There is an error for the network in downloading the file");
+            e.printStackTrace();
             return false;
         }
 
