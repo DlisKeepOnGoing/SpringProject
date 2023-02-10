@@ -88,7 +88,7 @@ public class DownloadController {
             response.setStatus(404);
             response.setHeader("Content-Type", "text/plain");
             PrintWriter writer = response.getWriter();
-            writer.write("we can not find this file");
+            writer.write("The file does not exist!");
             writer.close();
             return;
         }
