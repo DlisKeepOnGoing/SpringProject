@@ -33,11 +33,10 @@ public class DownloadController {
     @RequestMapping("/downloadToServer")
     public DownloadResponse downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) {
         FileData fileData = FileData.builder().name(fileName).filePath(FILE_DIR + fileName).sourcePath(netAddress).build();
-        String SQL_response = mySQLService.addFile(fileData);
-        boolean res_Downloaded = fetchResourcesFromNet(netAddress, fileName);
         String message;
+        boolean res_Downloaded = fetchResourcesFromNet(netAddress, fileName);
         if(res_Downloaded) {
-            message = SQL_response;
+            message = mySQLService.addFile(fileData);
         } else {
             message = "download failed, there is a network error";
         }
@@ -56,18 +55,17 @@ public class DownloadController {
             String urlPath = jsonNode.get("url").asText();
             String fileName = jsonNode.get("name").asText();
             FileData fileData = FileData.builder().name(fileName).filePath(FILE_DIR + fileName).sourcePath(urlPath).build();
-            String SQL_response = mySQLService.addFile(fileData);
             boolean res_Downloaded = fetchResourcesFromNet(urlPath, fileName);
-            String log_info;
+            String message;
             if(res_Downloaded) {
-                log_info = SQL_response;
+                message = mySQLService.addFile(fileData);
             } else {
-                log_info = "download failed, there is a network error!";
+                message = "download failed, there is a network error!";
             }
             DownloadResponse downloadResponse = DownloadResponse.builder()
                     .url(urlPath)
                     .name(fileName)
-                    .message(log_info)
+                    .message(message)
                     .build();
             downloadResponseList.add(downloadResponse);
         }
