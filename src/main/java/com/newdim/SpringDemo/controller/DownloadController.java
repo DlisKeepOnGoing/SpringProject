@@ -28,14 +28,21 @@ public class DownloadController {
 
     // The remote host -> SpringServer -> Save as file stored in my server
     @RequestMapping("/downloadToServer")
-    public String downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) throws IOException {
-        fetchResourcesFromNet(netAddress, fileName);
+    public String downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) {
         FileData fileData = FileData.builder().name(fileName).filePath(FILE_DIR + fileName).sourcePath(netAddress).build();
-        return mySQLService.addFile(fileData);
+        String SQL_response = mySQLService.addFile(fileData);
+        boolean res_Downloaded = fetchResourcesFromNet(netAddress, fileName);
+        String response;
+        if(res_Downloaded) {
+            response = SQL_response;
+        } else {
+            response = fileName + ": download failed, there is a network error";
+        }
+        return response;
     }
 
     @RequestMapping(value="/downloadMutipleToServer")
-    public String downloadMutipleToServer(@RequestBody JsonNode payload) throws IOException {
+    public String downloadMutipleToServer(@RequestBody JsonNode payload) {
         StringBuilder message = new StringBuilder();
         if (!payload.isArray()) {
             return "The payload is not correct, please check it";
@@ -44,9 +51,15 @@ public class DownloadController {
             String urlPath = jsonNode.get("url").asText();
             String fileName = jsonNode.get("name").asText();
             FileData fileData = FileData.builder().name(fileName).filePath(FILE_DIR + fileName).sourcePath(urlPath).build();
-            String log_info = mySQLService.addFile(fileData) + "\n";
-            fetchResourcesFromNet(urlPath, fileName);
-            message.append(log_info);
+            String SQL_response = mySQLService.addFile(fileData);
+            boolean res_Downloaded = fetchResourcesFromNet(urlPath, fileName);
+            String log_info;
+            if(res_Downloaded) {
+                log_info = SQL_response;
+            } else {
+                log_info = fileName + ": download failed, there is a network error!";
+            }
+            message.append(log_info).append("\n");
         }
         return message.toString();
     }
@@ -94,22 +107,28 @@ public class DownloadController {
     }
 
 
-    private void fetchResourcesFromNet(String netAddress, String fileName) throws IOException {
+    private boolean fetchResourcesFromNet(String netAddress, String fileName) {
 
-        // Input Stream
-        URL url = new URL(URIUtil.encodeQuery(netAddress, "UTF-8"));
-        URLConnection urlConnection = url.openConnection();
-        InputStream inputStream = urlConnection.getInputStream();
+        try {
+            // Input Stream
+            URL url = new URL(URIUtil.encodeQuery(netAddress, "UTF-8"));
+            URLConnection urlConnection = url.openConnection();
+            InputStream inputStream = urlConnection.getInputStream();
 
-        // Output Stream
-        FileOutputStream fileOutputStream = new FileOutputStream(FILE_DIR + fileName);
+            // Output Stream
+            FileOutputStream fileOutputStream = new FileOutputStream(FILE_DIR + fileName);
 
-        int byteRead;
-        byte[] buffer = new byte[8192];
-        while ((byteRead = inputStream.read(buffer)) != -1) {
-            fileOutputStream.write(buffer, 0, byteRead);
+            int byteRead;
+            byte[] buffer = new byte[8192];
+            while ((byteRead = inputStream.read(buffer)) != -1) {
+                fileOutputStream.write(buffer, 0, byteRead);
+            }
+            fileOutputStream.close();
+            return true;
+        } catch (IOException e) {
+            System.out.println("There is an error for the network in downloading the file");
+            return false;
         }
-        fileOutputStream.close();
 
     }
 
