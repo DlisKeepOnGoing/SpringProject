@@ -1,5 +1,6 @@
 package com.newdim.SpringDemo.controller;
 
+import com.newdim.SpringDemo.entity.DownloadResponse;
 import com.newdim.SpringDemo.entity.FileData;
 import com.newdim.SpringDemo.service.MySQLService;
 import jakarta.servlet.ServletOutputStream;
@@ -17,6 +18,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 public class DownloadController {
@@ -26,26 +29,42 @@ public class DownloadController {
     @Autowired
     private MySQLService mySQLService;
 
+    @RequestMapping("json")
+    public DownloadResponse testJson() {
+        DownloadResponse downloadResponse = DownloadResponse.builder().url("http://www.baidu.com").name("json").message("success").build();
+        return downloadResponse;
+    }
+
+    @RequestMapping("/jsonList")
+    public List<DownloadResponse> testJsonList() {
+        DownloadResponse downloadResponse = DownloadResponse.builder().url("http://www.baidu.com").name("json").message("success").build();
+        List<DownloadResponse> downloadResponseList = new ArrayList<>();
+        downloadResponseList.add(downloadResponse);
+        return downloadResponseList;
+    }
+
     // The remote host -> SpringServer -> Save as file stored in my server
     @RequestMapping("/downloadToServer")
-    public String downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) {
+    public DownloadResponse downloadToServer(@RequestParam String netAddress, @RequestParam String fileName) {
         FileData fileData = FileData.builder().name(fileName).filePath(FILE_DIR + fileName).sourcePath(netAddress).build();
         String SQL_response = mySQLService.addFile(fileData);
         boolean res_Downloaded = fetchResourcesFromNet(netAddress, fileName);
-        String response;
+        String message;
         if(res_Downloaded) {
-            response = SQL_response;
+            message = SQL_response;
         } else {
-            response = fileName + ": download failed, there is a network error";
+            message = "download failed, there is a network error";
         }
-        return response;
+        return DownloadResponse.builder().url(netAddress).name(fileName).message(message).build();
     }
 
     @RequestMapping(value="/downloadMutipleToServer")
-    public String downloadMutipleToServer(@RequestBody JsonNode payload) {
-        StringBuilder message = new StringBuilder();
+    public List<DownloadResponse> downloadMutipleToServer(@RequestBody JsonNode payload) {
+        // StringBuilder message = new StringBuilder();
+        List<DownloadResponse> downloadResponseList = new ArrayList<>();
         if (!payload.isArray()) {
-            return "The payload is not correct, please check it";
+            System.out.println("The payload is not correct, please check it");
+            return downloadResponseList;
         }
         for (JsonNode jsonNode : payload) {
             String urlPath = jsonNode.get("url").asText();
@@ -57,11 +76,16 @@ public class DownloadController {
             if(res_Downloaded) {
                 log_info = SQL_response;
             } else {
-                log_info = fileName + ": download failed, there is a network error!";
+                log_info = "download failed, there is a network error!";
             }
-            message.append(log_info).append("\n");
+            DownloadResponse downloadResponse = DownloadResponse.builder()
+                    .url(urlPath)
+                    .name(fileName)
+                    .message(log_info)
+                    .build();
+            downloadResponseList.add(downloadResponse);
         }
-        return message.toString();
+        return downloadResponseList;
     }
 
     // SpringServer -> Client -> Servlet Response

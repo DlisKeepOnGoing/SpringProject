@@ -17,13 +17,13 @@ public class MySQLService {
 
         try{
             fileDataRepository.save(fileData);
-            return fileData.getName() + ": file downloaded successfully!";
+            return "file downloaded successfully!";
         }catch (DataIntegrityViolationException e) {
             System.out.println("There are duplicate entries for fileName " + fileData.getName());
-            return fileData.getName() + ": file downloaded successfully! there is already an entry in the host server, use the latest download to overlap the old one!";
+            return "file downloaded successfully! there is already an entry in the host server, use the latest download to overlap the old one!";
         }catch (Exception ignored) {
             System.out.println("Unknown ERROR");
-            return fileData.getName() + ": Unknown ERROR!";
+            return "Unknown ERROR!";
         }
     }
 
